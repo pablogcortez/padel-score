@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b1220">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Padel Score</title>
+<style>
+  :root {
+    --bg: #0b1220;
+    --panel: #141e33;
+    --panel2: #1b2a47;
+    --accent: #2dd4bf;
+    --accent2: #f59e0b;
+    --text: #e8eefc;
+    --muted: #8da2c0;
+    --danger: #ef4444;
+    --win: #22c55e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    overflow: hidden;
+  }
+  .screen { display: none; flex: 1; flex-direction: column; min-height: 0; }
+  .screen.active { display: flex; }
+
+  /* ---------- SETUP ---------- */
+  #setup { padding: 24px 20px; gap: 18px; overflow-y: auto; }
+  #setup h1 {
+    font-size: 28px; text-align: center; letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--accent), #60a5fa);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin-bottom: 4px;
+  }
+  #setup .subtitle { text-align: center; color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .field input[type=text] {
+    width: 100%; padding: 13px 14px; border-radius: 12px;
+    border: 1px solid #2b3b5e; background: var(--panel); color: var(--text);
+    font-size: 16px; outline: none;
+  }
+  .field input[type=text]:focus { border-color: var(--accent); }
+  .seg { display: flex; background: var(--panel); border-radius: 12px; padding: 4px; gap: 4px; }
+  .seg button {
+    flex: 1; padding: 11px 6px; border: none; border-radius: 9px;
+    background: transparent; color: var(--muted); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .seg button.sel { background: var(--accent); color: #06281f; }
+  .start-btn {
+    margin-top: 8px; padding: 16px; border: none; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), #14b8a6);
+    color: #052e25; font-size: 18px; font-weight: 800; letter-spacing: .5px;
+    cursor: pointer; box-shadow: 0 6px 20px rgba(45,212,191,.25);
+  }
+  .resume-btn {
+    padding: 13px; border: 1px solid #2b3b5e; border-radius: 14px;
+    background: var(--panel); color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+
+  /* ---------- MATCH ---------- */
+  #match { gap: 0; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: var(--panel);
+  }
+  .topbar .mode-tag { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .topbar button {
+    background: var(--panel2); border: none; color: var(--text);
+    padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .topbar button.danger { color: #fca5a5; }
+
+  .scoreboard {
+    margin: 12px 14px 0; background: var(--panel); border-radius: 16px;
+    overflow: hidden; border: 1px solid #233453;
+  }
+  .sb-head, .sb-row { display: grid; grid-template-columns: 1fr repeat(var(--setcols, 1), 38px) 56px; align-items: center; }
+  .sb-head { padding: 8px 14px 4px; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .sb-head > div { text-align: center; }
+  .sb-head > div:first-child { text-align: left; }
+  .sb-row { padding: 10px 14px; font-size: 17px; font-weight: 700; }
+  .sb-row + .sb-row { border-top: 1px solid #223150; }
+  .sb-row .team-name { display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 16px; }
+  .serve-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); flex-shrink: 0; visibility: hidden; }
+  .sb-row.serving .serve-dot { visibility: visible; }
+  .sb-row .setcell { text-align: center; color: var(--muted); font-size: 16px; }
+  .sb-row .setcell.won { color: var(--text); }
+  .sb-row .pointcell {
+    text-align: center; font-size: 22px; font-weight: 800; color: var(--accent);
+    background: var(--panel2); border-radius: 10px; padding: 4px 0; margin-left: 6px;
+  }
+
+  .tb-banner {
+    margin: 10px 14px 0; text-align: center; font-size: 12px; font-weight: 700;
+    color: var(--accent2); letter-spacing: 2px; text-transform: uppercase;
+  }
+  .gp-banner {
+    margin: 10px 14px 0; text-align: center; font-size: 13px; font-weight: 800;
+    color: #fbbf24; letter-spacing: 2px; text-transform: uppercase;
+    animation: pulse 1s infinite alternate;
+  }
+  @keyframes pulse { from { opacity: .6; } to { opacity: 1; } }
+
+  .pads { flex: 1; display: flex; gap: 12px; padding: 14px; min-height: 0; }
+  .pad {
+    flex: 1; border: none; border-radius: 20px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    color: var(--text); transition: transform .08s;
+    touch-action: manipulation;
+  }
+  .pad:active { transform: scale(.97); }
+  .pad .pad-name { font-size: 15px; font-weight: 600; opacity: .85; padding: 0 10px; text-align: center; }
+  .pad .pad-points { font-size: 64px; font-weight: 900; line-height: 1; }
+  .pad .pad-hint { font-size: 11px; opacity: .55; text-transform: uppercase; letter-spacing: 1px; }
+  .pad.a { background: linear-gradient(160deg, #134e4a, #115e59); box-shadow: inset 0 0 0 1px #14b8a644; }
+  .pad.a .pad-points { color: var(--accent); }
+  .pad.b { background: linear-gradient(160deg, #1e3a8a55, #1d4ed855); box-shadow: inset 0 0 0 1px #3b82f644; }
+  .pad.b .pad-points { color: #60a5fa; }
+
+  .bottombar { display: flex; gap: 10px; padding: 0 14px 16px; }
+  .bottombar button {
+    flex: 1; padding: 14px; border: none; border-radius: 14px;
+    background: var(--panel); color: var(--text); font-size: 14px; font-weight: 700; cursor: pointer;
+    border: 1px solid #233453;
+  }
+  .bottombar button:disabled { opacity: .35; }
+  .bottombar button.on { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px rgba(45,212,191,.25); }
+
+  /* ---------- WINNER OVERLAY / MODALES ---------- */
+  #overlay, .modal {
+    position: fixed; inset: 0; background: rgba(5,10,20,.88);
+    display: none; align-items: center; justify-content: center; z-index: 50;
+    backdrop-filter: blur(4px);
+  }
+  #overlay.show, .modal.show { display: flex; }
+  .modal-text { font-size: 14px; color: var(--muted); line-height: 1.55; text-align: left; }
+  .modal-text b { color: var(--text); }
+  .modal-text .key { color: var(--accent); font-weight: 800; }
+  .overlay-card {
+    background: var(--panel); border: 1px solid #2b3b5e; border-radius: 22px;
+    padding: 32px 28px; text-align: center; max-width: 320px; width: 88%;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .overlay-card .trophy { font-size: 56px; }
+  .overlay-card h2 { font-size: 22px; color: var(--win); }
+  .overlay-card .final-score { font-size: 17px; color: var(--muted); letter-spacing: 1px; }
+  .overlay-card button {
+    padding: 13px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .overlay-card .new-match { background: var(--accent); color: #052e25; }
+  .overlay-card .undo-last { background: var(--panel2); color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup" class="screen active">
+  <h1>🎾 PADEL SCORE</h1>
+  <div class="subtitle">Marcador de pádel</div>
+
+  <div class="field">
+    <label>Pareja 1</label>
+    <input type="text" id="nameA" placeholder="Nosotros" maxlength="20">
+  </div>
+  <div class="field">
+    <label>Pareja 2</label>
+    <input type="text" id="nameB" placeholder="Ellos" maxlength="20">
+  </div>
+
+  <div class="field">
+    <label>Sets</label>
+    <div class="seg" id="segSets">
+      <button data-v="1">1 set</button>
+      <button data-v="3" class="sel">Al mejor de 3</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Deuce (40-40)</label>
+    <div class="seg" id="segGold">
+      <button data-v="gold" class="sel">Punto de oro</button>
+      <button data-v="adv">Ventaja</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Tie-break a 6-6</label>
+    <div class="seg" id="segTb">
+      <button data-v="yes" class="sel">Sí</button>
+      <button data-v="no">No (diferencia de 2)</button>
+    </div>
+  </div>
+
+  <button class="start-btn" id="btnStart">COMENZAR PARTIDO</button>
+  <button class="resume-btn" id="btnResume" style="display:none">▶ Continuar partido guardado</button>
+  <button class="resume-btn" id="btnInstall" style="display:none">📲 Instalar en el teléfono</button>
+</div>
+
+<!-- MATCH -->
+<div id="match" class="screen">
+  <div class="topbar">
+    <button id="btnExit" class="danger">✕ Salir</button>
+    <span class="mode-tag" id="modeTag"></span>
+    <button id="btnUndoTop">↩ Deshacer</button>
+  </div>
+
+  <div class="scoreboard" id="scoreboard">
+    <div class="sb-head" id="sbHead"></div>
+    <div class="sb-row" id="rowA">
+      <div class="team-name"><span class="serve-dot"></span><span class="tn"></span></div>
+    </div>
+    <div class="sb-row" id="rowB">
+      <div class="team-name"><span class="serve-dot"></span><span class="tn"></span></div>
+    </div>
+  </div>
+
+  <div class="tb-banner" id="tbBanner" style="display:none">— Tie-break —</div>
+  <div class="gp-banner" id="gpBanner" style="display:none">★ Punto de oro ★</div>
+
+  <div class="pads">
+    <button class="pad a" id="padA">
+      <span class="pad-name"></span>
+      <span class="pad-points">0</span>
+      <span class="pad-hint">Tocar para sumar</span>
+    </button>
+    <button class="pad b" id="padB">
+      <span class="pad-name"></span>
+      <span class="pad-points">0</span>
+      <span class="pad-hint">Tocar para sumar</span>
+    </button>
+  </div>
+
+  <div class="bottombar">
+    <button id="btnUndo">↩ Deshacer punto</button>
+    <button id="btnWatch">⌚ Reloj</button>
+  </div>
+</div>
+
+<!-- CONTROL DESDE EL RELOJ -->
+<div id="watchModal" class="modal">
+  <div class="overlay-card">
+    <h2 style="color:var(--text);font-size:19px">⌚ Control desde el reloj</h2>
+    <div class="modal-text">
+      El reloj maneja el marcador con sus <b>controles de música Bluetooth</b>.
+      Al activar, el teléfono reproduce una pista silenciosa llamada <b>Padel Score</b>.<br><br>
+      En tu Huawei Watch abrí <b>Música</b> (controles del teléfono) y tocá <b>⏯</b>:<br>
+      <span class="key">1 toque</span> → punto para <b id="wmA"></b><br>
+      <span class="key">2 toques</span> → punto para <b id="wmB"></b><br>
+      <span class="key">3 toques</span> → deshacer último punto<br><br>
+      También: <b>⏭</b> punto para <b id="wmB2"></b> · <b>⏮</b> deshacer.<br>
+      El título de la "canción" muestra el marcador en vivo en el reloj.<br><br>
+      <i>Nota: el Bluetooth no transmite "mantener apretado", por eso deshacer son 3 toques en vez de una pulsación larga.</i>
+    </div>
+    <button class="new-match" id="btnWatchGo">Activar control</button>
+    <button class="undo-last" id="btnWatchCancel">Cancelar</button>
+  </div>
+</div>
+
+<!-- WINNER -->
+<div id="overlay">
+  <div class="overlay-card">
+    <div class="trophy">🏆</div>
+    <h2 id="winnerName"></h2>
+    <div class="final-score" id="finalScore"></div>
+    <button class="undo-last" id="btnUndoLast">↩ Deshacer último punto</button>
+    <button class="new-match" id="btnNewMatch">Nuevo partido</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+const STORAGE_KEY = 'padel-score-match';
+
+// ---------- Estado ----------
+// El partido se guarda como configuración + lista de puntos ('A'/'B').
+// El marcador completo se recalcula reproduciendo los puntos: deshacer = quitar el último.
+let match = null;
+
+const defaultConfig = () => ({
+  nameA: 'Nosotros',
+  nameB: 'Ellos',
+  setsToWin: 2,      // 2 = al mejor de 3; 1 = un set
+  goldenPoint: true,
+  tiebreak: true,
+});
+
+// ---------- Motor de puntuación ----------
+const PTS = ['0', '15', '30', '40'];
+
+function computeScore(cfg, points) {
+  const s = {
+    sets: [],                 // sets terminados: {a, b, tb?}
+    games: { a: 0, b: 0 },    // juegos del set actual
+    pts: { a: 0, b: 0 },      // puntos del juego actual (índice o nº en tie-break)
+    inTiebreak: false,
+    setsWon: { a: 0, b: 0 },
+    winner: null,             // 'a' | 'b' | null
+    isGoldenPoint: false,
+    server: 'a',              // quién saca (alterna por juego)
+    gamesPlayedTotal: 0,
+    tbPointsPlayed: 0,
+  };
+
+  for (const p of points) {
+    if (s.winner) break; // puntos posteriores al final se ignoran
+    const w = p === 'A' ? 'a' : 'b';
+    const l = w === 'a' ? 'b' : 'a';
+
+    if (s.inTiebreak) {
+      s.pts[w]++;
+      s.tbPointsPlayed++;
+      if (s.pts[w] >= 7 && s.pts[w] - s.pts[l] >= 2) {
+        winGame(s, w, cfg, true);
+      }
+      continue;
+    }
+
+    // Juego normal
+    if (s.pts[w] === 3 && s.pts[l] === 3) {
+      // 40-40
+      if (cfg.goldenPoint) {
+        winGame(s, w, cfg, false);
+      } else {
+        s.pts[w] = 4; // ventaja
+      }
+    } else if (s.pts[w] === 4) {
+      winGame(s, w, cfg, false); // tenía ventaja y ganó
+    } else if (s.pts[l] === 4) {
+      s.pts[l] = 3; // pierde la ventaja, vuelve a deuce
+    } else if (s.pts[w] === 3) {
+      winGame(s, w, cfg, false);
+    } else {
+      s.pts[w]++;
+    }
+  }
+
+  s.isGoldenPoint = !s.winner && !s.inTiebreak && cfg.goldenPoint && s.pts.a === 3 && s.pts.b === 3;
+
+  // Saque: alterna cada juego; en tie-break, 1er punto un equipo y luego cada 2
+  if (s.inTiebreak) {
+    const t = s.tbPointsPlayed;
+    const tbFirst = s.gamesPlayedTotal % 2 === 0 ? 'a' : 'b';
+    s.server = (Math.floor((t + 1) / 2) % 2 === 0) ? tbFirst : (tbFirst === 'a' ? 'b' : 'a');
+  } else {
+    s.server = s.gamesPlayedTotal % 2 === 0 ? 'a' : 'b';
+  }
+
+  return s;
+}
+
+function winGame(s, w, cfg, wasTiebreak) {
+  const l = w === 'a' ? 'b' : 'a';
+  s.games[w]++;
+  s.gamesPlayedTotal++;
+  s.pts = { a: 0, b: 0 };
+  s.tbPointsPlayed = 0;
+
+  const gw = s.games[w], gl = s.games[l];
+  let setOver = false;
+
+  if (wasTiebreak) {
+    setOver = true; // el tie-break define el set 7-6
+    s.inTiebreak = false;
+  } else if (gw >= 6 && gw - gl >= 2) {
+    setOver = true;
+  } else if (cfg.tiebreak && gw === 6 && gl === 6) {
+    s.inTiebreak = true;
+  }
+
+  if (setOver) {
+    s.sets.push({ a: s.games.a, b: s.games.b });
+    s.setsWon[w]++;
+    s.games = { a: 0, b: 0 };
+    if (s.setsWon[w] >= cfg.setsToWin) s.winner = w;
+  }
+}
+
+function pointLabel(s, team) {
+  if (s.inTiebreak) return String(s.pts[team]);
+  if (s.pts[team] === 4) return 'AD';
+  return PTS[s.pts[team]];
+}
+
+// ---------- Persistencia ----------
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(match)); } catch (e) {}
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const m = JSON.parse(raw);
+    if (m && m.cfg && Array.isArray(m.points)) return m;
+  } catch (e) {}
+  return null;
+}
+function clearSaved() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+}
+
+// ---------- UI: setup ----------
+function segInit(segId) {
+  const seg = $(segId);
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    seg.querySelectorAll('button').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+  });
+}
+['segSets', 'segGold', 'segTb'].forEach(segInit);
+
+function segValue(segId) {
+  return $(segId).querySelector('button.sel').dataset.v;
+}
+
+$('btnStart').addEventListener('click', () => {
+  const cfg = defaultConfig();
+  cfg.nameA = $('nameA').value.trim() || 'Nosotros';
+  cfg.nameB = $('nameB').value.trim() || 'Ellos';
+  cfg.setsToWin = segValue('segSets') === '1' ? 1 : 2;
+  cfg.goldenPoint = segValue('segGold') === 'gold';
+  cfg.tiebreak = segValue('segTb') === 'yes';
+  match = { cfg, points: [] };
+  save();
+  showMatch();
+});
+
+$('btnResume').addEventListener('click', () => {
+  const m = load();
+  if (m) { match = m; showMatch(); }
+});
+
+// ---------- UI: partido ----------
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+function showMatch() {
+  showScreen('match');
+  requestWakeLock();
+  render();
+}
+
+function addPoint(team) {
+  const s = computeScore(match.cfg, match.points);
+  if (s.winner) return;
+  match.points.push(team);
+  save();
+  if (navigator.vibrate) navigator.vibrate(15);
+  render();
+}
+
+function undo() {
+  if (!match.points.length) return;
+  match.points.pop();
+  save();
+  render();
+}
+
+$('padA').addEventListener('click', () => addPoint('A'));
+$('padB').addEventListener('click', () => addPoint('B'));
+$('btnUndo').addEventListener('click', undo);
+$('btnUndoTop').addEventListener('click', undo);
+$('btnUndoLast').addEventListener('click', () => { $('overlay').classList.remove('show'); undo(); });
+
+$('btnExit').addEventListener('click', () => {
+  if (match.points.length && !computeScore(match.cfg, match.points).winner) {
+    if (!confirm('¿Salir? El partido queda guardado y podés continuarlo después.')) return;
+  }
+  showSetup();
+});
+
+$('btnNewMatch').addEventListener('click', () => {
+  $('overlay').classList.remove('show');
+  clearSaved();
+  match = null;
+  showSetup();
+});
+
+function showSetup() {
+  showScreen('setup');
+  watchStop();
+  releaseWakeLock();
+  const saved = load();
+  const hasOngoing = saved && saved.points && !computeScore(saved.cfg, saved.points).winner && saved.points.length > 0;
+  $('btnResume').style.display = hasOngoing ? 'block' : 'none';
+}
+
+function render() {
+  const cfg = match.cfg;
+  const s = computeScore(cfg, match.points);
+  const maxSets = cfg.setsToWin === 1 ? 1 : 3;
+  const finished = !!s.winner;
+
+  // columnas de sets
+  const cols = Math.min(maxSets, Math.max(s.sets.length + (finished ? 0 : 1), 1));
+  $('scoreboard').style.setProperty('--setcols', cols);
+
+  // cabecera
+  let head = '<div>Equipo</div>';
+  for (let i = 0; i < cols; i++) head += `<div>S${i + 1}</div>`;
+  head += '<div>Pts</div>';
+  $('sbHead').innerHTML = head;
+
+  // filas
+  for (const t of ['a', 'b']) {
+    const row = $(t === 'a' ? 'rowA' : 'rowB');
+    row.querySelectorAll('.setcell, .pointcell').forEach(el => el.remove());
+    row.querySelector('.tn').textContent = t === 'a' ? cfg.nameA : cfg.nameB;
+    row.classList.toggle('serving', !finished && s.server === t);
+
+    for (let i = 0; i < cols; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'setcell';
+      if (i < s.sets.length) {
+        const set = s.sets[i];
+        cell.textContent = set[t];
+        const other = t === 'a' ? 'b' : 'a';
+        if (set[t] > set[other]) cell.classList.add('won');
+      } else if (i === s.sets.length && !finished) {
+        cell.textContent = s.games[t];
+        cell.classList.add('won');
+      } else {
+        cell.textContent = '·';
+      }
+      row.appendChild(cell);
+    }
+    const pc = document.createElement('div');
+    pc.className = 'pointcell';
+    pc.textContent = finished ? '–' : pointLabel(s, t);
+    row.appendChild(pc);
+  }
+
+  // pads
+  $('padA').querySelector('.pad-name').textContent = cfg.nameA;
+  $('padB').querySelector('.pad-name').textContent = cfg.nameB;
+  $('padA').querySelector('.pad-points').textContent = finished ? '–' : pointLabel(s, 'a');
+  $('padB').querySelector('.pad-points').textContent = finished ? '–' : pointLabel(s, 'b');
+
+  // banners
+  $('tbBanner').style.display = s.inTiebreak ? 'block' : 'none';
+  $('gpBanner').style.display = s.isGoldenPoint ? 'block' : 'none';
+
+  // modo
+  $('modeTag').textContent =
+    (cfg.setsToWin === 1 ? '1 set' : 'Mejor de 3') + ' · ' +
+    (cfg.goldenPoint ? 'Pto. de oro' : 'Ventaja');
+
+  $('btnUndo').disabled = match.points.length === 0;
+  $('btnUndoTop').disabled = match.points.length === 0;
+
+  // marcador en vivo en el reloj (título de la "canción")
+  if (watchActive && 'mediaSession' in navigator) {
+    const title = finished
+      ? `🏆 Ganó ${s.winner === 'a' ? cfg.nameA : cfg.nameB}`
+      : `${cfg.nameA} ${pointLabel(s, 'a')} - ${pointLabel(s, 'b')} ${cfg.nameB}`;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title,
+        artist: `Juegos ${s.games.a}-${s.games.b} · Sets ${s.setsWon.a}-${s.setsWon.b}`,
+        album: 'Padel Score',
+        artwork: [{ src: 'icon-512.png', sizes: '512x512', type: 'image/png' }],
+      });
+    } catch (e) {}
+  }
+
+  // fin del partido
+  if (finished) {
+    const wName = s.winner === 'a' ? cfg.nameA : cfg.nameB;
+    $('winnerName').textContent = `¡Ganó ${wName}!`;
+    $('finalScore').textContent = s.sets
+      .map(set => s.winner === 'a' ? `${set.a}-${set.b}` : `${set.b}-${set.a}`)
+      .join('  ·  ');
+    $('overlay').classList.add('show');
+  } else {
+    $('overlay').classList.remove('show');
+  }
+}
+
+// ---------- PWA ----------
+if ('serviceWorker' in navigator &&
+    (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname))) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+let deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  $('btnInstall').style.display = 'block';
+});
+$('btnInstall').addEventListener('click', async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  await deferredInstall.userChoice;
+  deferredInstall = null;
+  $('btnInstall').style.display = 'none';
+});
+
+// ---------- Wake lock: pantalla encendida durante el partido ----------
+let wakeLock = null;
+async function requestWakeLock() {
+  try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+function releaseWakeLock() {
+  try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && $('match').classList.contains('active')) requestWakeLock();
+});
+
+// ---------- Control desde el reloj (Media Session por Bluetooth) ----------
+// El reloj manda comandos de música (play/pausa, siguiente, anterior). La app
+// reproduce un WAV silencioso en loop para mantener la sesión de medios activa
+// y cuenta los toques en ⏯: 1 = punto A, 2 = punto B, 3+ = deshacer.
+let watchActive = false;
+let watchAudio = null;
+let tapCount = 0, tapTimer = null;
+
+function makeSilentWav(sec = 2) {
+  const rate = 8000, n = rate * sec;
+  const buf = new ArrayBuffer(44 + n);
+  const v = new DataView(buf);
+  const str = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVE'); str(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+  str(36, 'data'); v.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) v.setUint8(44 + i, 128); // silencio (8-bit, centro = 128)
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+
+function watchTap() {
+  tapCount++;
+  clearTimeout(tapTimer);
+  tapTimer = setTimeout(() => {
+    const n = tapCount;
+    tapCount = 0;
+    if (n === 1) addPoint('A');
+    else if (n === 2) addPoint('B');
+    else undo();
+  }, 700); // ventana para distinguir 1 / 2 / 3 toques
+}
+
+async function watchStart() {
+  if (!('mediaSession' in navigator)) {
+    alert('Este navegador no soporta control de medios (Media Session). Probá con Chrome en el teléfono.');
+    return;
+  }
+  if (!watchAudio) {
+    watchAudio = new Audio(makeSilentWav());
+    watchAudio.loop = true;
+    // si el sistema pausa el audio, lo retomamos para no perder la sesión
+    watchAudio.addEventListener('pause', () => { if (watchActive) watchAudio.play().catch(() => {}); });
+  }
+  try { await watchAudio.play(); } catch (e) {
+    alert('No se pudo iniciar el audio de control. Tocá la pantalla e intentá de nuevo.');
+    return;
+  }
+  const ms = navigator.mediaSession;
+  const keep = () => { watchAudio.play().catch(() => {}); ms.playbackState = 'playing'; };
+  ms.setActionHandler('play', () => { keep(); watchTap(); });
+  ms.setActionHandler('pause', () => { keep(); watchTap(); });
+  ms.setActionHandler('nexttrack', () => { keep(); addPoint('B'); });
+  ms.setActionHandler('previoustrack', () => { keep(); undo(); });
+  ms.playbackState = 'playing';
+  watchActive = true;
+  $('btnWatch').classList.add('on');
+  $('btnWatch').textContent = '⌚ Reloj ON';
+  render();
+}
+
+function watchStop() {
+  if (!watchActive && !watchAudio) {
+    $('btnWatch').classList.remove('on');
+    $('btnWatch').textContent = '⌚ Reloj';
+    return;
+  }
+  watchActive = false;
+  if (watchAudio) watchAudio.pause();
+  if ('mediaSession' in navigator) {
+    const ms = navigator.mediaSession;
+    ['play', 'pause', 'nexttrack', 'previoustrack'].forEach(a => {
+      try { ms.setActionHandler(a, null); } catch (e) {}
+    });
+    ms.playbackState = 'none';
+    ms.metadata = null;
+  }
+  $('btnWatch').classList.remove('on');
+  $('btnWatch').textContent = '⌚ Reloj';
+}
+
+$('btnWatch').addEventListener('click', () => {
+  if (watchActive) { watchStop(); return; }
+  $('wmA').textContent = match.cfg.nameA;
+  $('wmB').textContent = match.cfg.nameB;
+  $('wmB2').textContent = match.cfg.nameB;
+  $('watchModal').classList.add('show');
+});
+$('btnWatchGo').addEventListener('click', () => {
+  $('watchModal').classList.remove('show');
+  watchStart();
+});
+$('btnWatchCancel').addEventListener('click', () => $('watchModal').classList.remove('show'));
+
+// ---------- Arranque ----------
+(function init() {
+  const saved = load();
+  if (saved && saved.points.length > 0 && !computeScore(saved.cfg, saved.points).winner) {
+    // partido en curso: entrar directo
+    match = saved;
+    showMatch();
+  } else {
+    showSetup();
+  }
+})();
+</script>
+</body>
+</html>
