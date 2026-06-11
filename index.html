@@ -257,13 +257,11 @@
     <div class="modal-text">
       El reloj maneja el marcador con sus <b>controles de música Bluetooth</b>.
       Al activar, el teléfono reproduce una pista silenciosa llamada <b>Padel Score</b>.<br><br>
-      En tu Huawei Watch abrí <b>Música</b> (controles del teléfono) y tocá <b>⏯</b>:<br>
-      <span class="key">1 toque</span> → punto para <b id="wmA"></b><br>
-      <span class="key">2 toques</span> → punto para <b id="wmB"></b><br>
-      <span class="key">3 toques</span> → deshacer último punto<br><br>
-      También: <b>⏭</b> punto para <b id="wmB2"></b> · <b>⏮</b> deshacer.<br>
-      El título de la "canción" muestra el marcador en vivo en el reloj.<br><br>
-      <i>Nota: el Bluetooth no transmite "mantener apretado", por eso deshacer son 3 toques en vez de una pulsación larga.</i>
+      En tu Huawei Watch abrí <b>Música</b> (controles del teléfono):<br>
+      <span class="key">⏮ anterior</span> → punto para <b id="wmA"></b><br>
+      <span class="key">⏭ siguiente</span> → punto para <b id="wmB"></b><br>
+      <span class="key">⏯ play/pausa</span> → deshacer último punto<br><br>
+      El título de la "canción" muestra el marcador en vivo en el reloj.
     </div>
     <button class="new-match" id="btnWatchGo">Activar control</button>
     <button class="undo-last" id="btnWatchCancel">Cancelar</button>
@@ -628,12 +626,11 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ---------- Control desde el reloj (Media Session por Bluetooth) ----------
-// El reloj manda comandos de música (play/pausa, siguiente, anterior). La app
-// reproduce un WAV silencioso en loop para mantener la sesión de medios activa
-// y cuenta los toques en ⏯: 1 = punto A, 2 = punto B, 3+ = deshacer.
+// El reloj manda comandos de música. La app reproduce un WAV silencioso en
+// loop para mantener la sesión de medios activa y mapea los tres botones:
+// ⏮ anterior = punto A · ⏭ siguiente = punto B · ⏯ play/pausa = deshacer.
 let watchActive = false;
 let watchAudio = null;
-let tapCount = 0, tapTimer = null;
 
 // mínimo ~5s: Chrome no crea sesión de medios (ni notificación, ni control
 // Bluetooth) para audios más cortos — por eso la pista dura 60s en loop
@@ -648,18 +645,6 @@ function makeSilentWav(sec = 60) {
   str(36, 'data'); v.setUint32(40, n, true);
   for (let i = 0; i < n; i++) v.setUint8(44 + i, 128); // silencio (8-bit, centro = 128)
   return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
-}
-
-function watchTap() {
-  tapCount++;
-  clearTimeout(tapTimer);
-  tapTimer = setTimeout(() => {
-    const n = tapCount;
-    tapCount = 0;
-    if (n === 1) addPoint('A');
-    else if (n === 2) addPoint('B');
-    else undo();
-  }, 700); // ventana para distinguir 1 / 2 / 3 toques
 }
 
 async function watchStart() {
@@ -679,10 +664,10 @@ async function watchStart() {
   }
   const ms = navigator.mediaSession;
   const keep = () => { watchAudio.play().catch(() => {}); ms.playbackState = 'playing'; };
-  ms.setActionHandler('play', () => { keep(); watchTap(); });
-  ms.setActionHandler('pause', () => { keep(); watchTap(); });
+  ms.setActionHandler('play', () => { keep(); undo(); });
+  ms.setActionHandler('pause', () => { keep(); undo(); });
+  ms.setActionHandler('previoustrack', () => { keep(); addPoint('A'); });
   ms.setActionHandler('nexttrack', () => { keep(); addPoint('B'); });
-  ms.setActionHandler('previoustrack', () => { keep(); undo(); });
   ms.playbackState = 'playing';
   watchActive = true;
   $('btnWatch').classList.add('on');
@@ -714,7 +699,6 @@ $('btnWatch').addEventListener('click', () => {
   if (watchActive) { watchStop(); return; }
   $('wmA').textContent = match.cfg.nameA;
   $('wmB').textContent = match.cfg.nameB;
-  $('wmB2').textContent = match.cfg.nameB;
   $('watchModal').classList.add('show');
 });
 $('btnWatchGo').addEventListener('click', () => {
