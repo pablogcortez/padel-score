@@ -635,7 +635,9 @@ let watchActive = false;
 let watchAudio = null;
 let tapCount = 0, tapTimer = null;
 
-function makeSilentWav(sec = 2) {
+// mínimo ~5s: Chrome no crea sesión de medios (ni notificación, ni control
+// Bluetooth) para audios más cortos — por eso la pista dura 60s en loop
+function makeSilentWav(sec = 60) {
   const rate = 8000, n = rate * sec;
   const buf = new ArrayBuffer(44 + n);
   const v = new DataView(buf);
