@@ -36,7 +36,7 @@ Sin frameworks ni dependencias: HTML/CSS/JS vanilla en un solo archivo.
 |---|---|
 | `index.html` | Toda la app: UI, motor de puntuación, PWA, control por reloj |
 | `manifest.webmanifest` | Manifest PWA (standalone, es, íconos 192/512) |
-| `sw.js` | Service worker, precache + stale-while-revalidate. **Versión actual: `padel-score-v6`** |
+| `sw.js` | Service worker, precache + stale-while-revalidate. **Versión actual: `padel-score-v7`** |
 | `icon-192.png`, `icon-512.png` | Íconos (pelota teal sobre fondo oscuro) |
 | `make-icons.cjs` | Regenera los PNG sin dependencias (PNG crudo + zlib) |
 | `test-engine.cjs` | 23 pruebas del motor de puntuación: `node test-engine.cjs` |
@@ -68,9 +68,17 @@ toma el primer bloque `<script>`. Si se reestructura, actualizar el test.
 El Huawei Watch GT 6 **no puede** correr web/apps propias ni mandar taps al teléfono.
 Canal usado: **controles de música Bluetooth (AVRCP) + Media Session API**.
 
-Funcionamiento: al activar "⌚ Reloj", la app reproduce un **WAV silencioso generado
-en runtime** (loop) y registra handlers de Media Session. El usuario maneja el
-marcador desde la app **Música** del reloj (controles del teléfono).
+Funcionamiento: la app reproduce un **WAV silencioso generado en runtime** (loop)
+y registra handlers de Media Session. El usuario maneja el marcador desde la app
+**Música** del reloj (controles del teléfono).
+
+**Desde v7, reloj y voz están ON por defecto** (prefs `padel-watch` / `padel-voice`
+en localStorage; los botones ⌚ y 🔊 apagan/mutean y se recuerda). El reloj se
+auto-activa en `showMatch()` — el tap en "Comenzar/Continuar" aporta el gesto que
+exige el autoplay policy; si la app retoma sola un partido al abrir (sin gesto),
+`watchStart(true)` falla silenciosamente y se rearma con un listener `pointerdown`
+de una sola vez. El modal de instrucciones del reloj se muestra solo la primera
+vez (`padel-watch-info`).
 
 **Mapeo actual (validado por el usuario en el reloj real):**
 - `previoustrack` (⏮) → punto para nosotros (A)

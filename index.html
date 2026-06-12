@@ -272,8 +272,7 @@
       <span class="key">⏯ play/pausa</span> → deshacer último punto<br><br>
       El título de la "canción" muestra el marcador en vivo en el reloj.
     </div>
-    <button class="new-match" id="btnWatchGo">Activar control</button>
-    <button class="undo-last" id="btnWatchCancel">Cancelar</button>
+    <button class="new-match" id="btnWatchOk">Entendido</button>
   </div>
 </div>
 
@@ -491,6 +490,7 @@ function showMatch() {
   showScreen('match');
   requestWakeLock();
   render();
+  if (watchPref && !watchActive) watchStart(true); // reloj ON por defecto
 }
 
 function addPoint(team) {
@@ -661,6 +661,13 @@ document.addEventListener('visibilitychange', () => {
 // ⏮ anterior = punto A · ⏭ siguiente = punto B · ⏯ play/pausa = deshacer.
 let watchActive = false;
 let watchAudio = null;
+let watchPref = true; // ON por defecto; el botón ⌚ lo apaga y se recuerda
+try { watchPref = localStorage.getItem('padel-watch') !== '0'; } catch (e) {}
+
+function setWatchPref(v) {
+  watchPref = v;
+  try { localStorage.setItem('padel-watch', v ? '1' : '0'); } catch (e) {}
+}
 
 // mínimo ~5s: Chrome no crea sesión de medios (ni notificación, ni control
 // Bluetooth) para audios más cortos — por eso la pista dura 60s en loop
@@ -694,9 +701,9 @@ function pushWatchMetadata() {
   } catch (e) {}
 }
 
-async function watchStart() {
+async function watchStart(auto) {
   if (!('mediaSession' in navigator)) {
-    alert('Este navegador no soporta control de medios (Media Session). Probá con Chrome en el teléfono.');
+    if (!auto) alert('Este navegador no soporta control de medios (Media Session). Probá con Chrome en el teléfono.');
     return;
   }
   if (!watchAudio) {
@@ -708,7 +715,14 @@ async function watchStart() {
     watchAudio.addEventListener('playing', () => { if (watchActive) pushWatchMetadata(); });
   }
   try { await watchAudio.play(); } catch (e) {
-    alert('No se pudo iniciar el audio de control. Tocá la pantalla e intentá de nuevo.');
+    if (auto) {
+      // sin gesto del usuario el navegador bloquea el audio: reintentar al primer toque
+      document.addEventListener('pointerdown', () => {
+        if (watchPref && !watchActive && $('match').classList.contains('active')) watchStart(true);
+      }, { once: true });
+    } else {
+      alert('No se pudo iniciar el audio de control. Tocá la pantalla e intentá de nuevo.');
+    }
     return;
   }
   const ms = navigator.mediaSession;
@@ -725,6 +739,15 @@ async function watchStart() {
   $('btnWatch').classList.add('on');
   $('btnWatch').textContent = '⌚ Reloj ON';
   render();
+  // instrucciones solo la primera vez que se activa en este dispositivo
+  let seen = true;
+  try { seen = !!localStorage.getItem('padel-watch-info'); } catch (e) {}
+  if (!seen) {
+    try { localStorage.setItem('padel-watch-info', '1'); } catch (e) {}
+    $('wmA').textContent = match.cfg.nameA;
+    $('wmB').textContent = match.cfg.nameB;
+    $('watchModal').classList.add('show');
+  }
 }
 
 function watchStop() {
@@ -748,20 +771,19 @@ function watchStop() {
 }
 
 $('btnWatch').addEventListener('click', () => {
-  if (watchActive) { watchStop(); return; }
-  $('wmA').textContent = match.cfg.nameA;
-  $('wmB').textContent = match.cfg.nameB;
-  $('watchModal').classList.add('show');
+  if (watchActive) {
+    watchStop();
+    setWatchPref(false);
+  } else {
+    setWatchPref(true);
+    watchStart();
+  }
 });
-$('btnWatchGo').addEventListener('click', () => {
-  $('watchModal').classList.remove('show');
-  watchStart();
-});
-$('btnWatchCancel').addEventListener('click', () => $('watchModal').classList.remove('show'));
+$('btnWatchOk').addEventListener('click', () => $('watchModal').classList.remove('show'));
 
 // ---------- Voz: canta el marcador (Web Speech API, TTS local de Android) ----------
-let voiceOn = false;
-try { voiceOn = localStorage.getItem('padel-voice') === '1'; } catch (e) {}
+let voiceOn = true; // ON por defecto; el botón 🔊 mutea y se recuerda
+try { voiceOn = localStorage.getItem('padel-voice') !== '0'; } catch (e) {}
 
 function speak(text) {
   if (!voiceOn || !('speechSynthesis' in window)) return;
