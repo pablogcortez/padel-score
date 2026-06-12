@@ -842,39 +842,6 @@ $('btnVoice').addEventListener('click', () => {
   else try { speechSynthesis.cancel(); } catch (e) {}
 });
 
-// ---------- Disparadores BLE tipo teclado (shutters que mandan Enter) ----------
-// Algunos disparadores de cámara BLE actúan como teclado y mandan Enter; acá se
-// capturan con los mismos gestos del botón DIY: 1 toque = punto A, 2 = punto B,
-// mantener 2 s = borrar. Requiere pantalla encendida y app en primer plano
-// (el wake lock ya mantiene la pantalla activa durante el partido).
-let kbTaps = 0, kbTapTimer = null, kbHoldTimer = null, kbHoldFired = false, kbDown = false;
-const KB_KEYS = ['Enter', 'NumpadEnter', ' ', 'Spacebar'];
-
-document.addEventListener('keydown', e => {
-  if (!KB_KEYS.includes(e.key) || !$('match').classList.contains('active')) return;
-  e.preventDefault(); // que Enter no "clickee" botones de la UI
-  if (e.repeat || kbDown) return;
-  kbDown = true;
-  kbHoldFired = false;
-  kbHoldTimer = setTimeout(() => { kbHoldFired = true; undo(); }, 2000);
-});
-
-document.addEventListener('keyup', e => {
-  if (!KB_KEYS.includes(e.key) || !$('match').classList.contains('active')) return;
-  e.preventDefault();
-  kbDown = false;
-  clearTimeout(kbHoldTimer);
-  if (kbHoldFired) return;
-  kbTaps++;
-  clearTimeout(kbTapTimer);
-  kbTapTimer = setTimeout(() => {
-    const n = kbTaps;
-    kbTaps = 0;
-    if (n === 1) addPoint('A');
-    else addPoint('B');
-  }, 400);
-});
-
 // ---------- Arranque ----------
 (function init() {
   const saved = load();

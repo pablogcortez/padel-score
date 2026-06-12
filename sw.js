@@ -1,5 +1,5 @@
 // Service worker: precachea la app para que funcione 100% offline.
-const CACHE = 'padel-score-v8';
+const CACHE = 'padel-score-v9';
 const ASSETS = [
   './',
   './index.html',

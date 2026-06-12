@@ -38,7 +38,7 @@ Sin frameworks ni dependencias: HTML/CSS/JS vanilla en un solo archivo.
 |---|---|
 | `index.html` | Toda la app: UI, motor de puntuación, PWA, control por reloj |
 | `manifest.webmanifest` | Manifest PWA (standalone, es, íconos 192/512) |
-| `sw.js` | Service worker, precache + stale-while-revalidate. **Versión actual: `padel-score-v8`** |
+| `sw.js` | Service worker, precache + stale-while-revalidate. **Versión actual: `padel-score-v9`** |
 | `icon-192.png`, `icon-512.png` | Íconos (pelota teal sobre fondo oscuro) |
 | `make-icons.cjs` | Regenera los PNG sin dependencias (PNG crudo + zlib) |
 | `test-engine.cjs` | 23 pruebas del motor de puntuación: `node test-engine.cjs` |
@@ -113,12 +113,10 @@ El título de la "canción" (MediaMetadata) muestra el marcador en vivo en el re
 Extras: wake lock (pantalla encendida durante el partido), vibración al sumar punto,
 prompt de instalación con `beforeinstallprompt` (botón "📲 Instalar en el teléfono").
 
-**Shutters BLE tipo teclado (v8)**: la app también captura Enter/Espacio con los
-gestos del botón DIY (1 toque = punto A, 2 = punto B, mantener 2 s = borrar), por
-si un disparador de cámara BLE de los que mandan Enter (no los de volumen, que son
-incapturables desde web) sirve de control provisorio. Limitación: requiere pantalla
-encendida y app en primer plano (el wake lock lo cubre durante el partido).
-`preventDefault` evita que Enter clickee botones de la UI.
+**Shutters BLE tipo teclado: agregado en v8 y REVERTIDO en v9** a pedido del
+usuario (volver a control solo por reloj/pantalla). Si se quisiera retomar, el
+código está en el commit 162569f: captura de Enter/Espacio con gestos 1/2/mantener;
+limitación: pantalla encendida y app en primer plano.
 
 **Voz (v6)**: botón "🔊 Voz" en la barra inferior — canta el marcador con Web Speech
 API (TTS local de Android, offline, `lang es-ES`). Tras cada punto dice el tanteo
