@@ -13,11 +13,13 @@
   cancha a mitad de cancha.
 - **Alternativas para más alcance: ver `BOTON-DIY.md`** — documenta el botón BLE
   de muñeca casero (ESP32-C3 / XIAO nRF52840, BOM verificada en Mercado Libre AR,
-  conexionado, diseño del firmware con gestos 1/2/mantener) y la opción comprada
-  (Flic 2 + Wristband, ~50 m, gestos nativos mapeables a medios). Ambos usan el
-  mismo canal de Media Session, funcionan sin tocar el código de la app y pueden
-  convivir con el reloj. **El usuario tiene experiencia en electrónica y aún no
-  compró componentes**; cuando lleguen, escribir el firmware completo en `firmware/`.
+  conexionado, controles de volante baratos y Flic 2 como opciones compradas).
+  Todos usan el mismo canal de Media Session y conviven con el reloj.
+  **El firmware ya está escrito en `firmware/padel-boton/padel-boton.ino`**
+  (NimBLE-Arduino 2.x, HID Consumer Control, gestos 1/2/mantener, vibración,
+  deep sleep) con guía en `firmware/README.md`. El usuario tiene experiencia en
+  electrónica; **componentes pendientes de compra** — el firmware está sin probar
+  en hardware real hasta que lleguen.
 
 ## Qué es
 

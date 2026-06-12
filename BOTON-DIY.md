@@ -2,8 +2,8 @@
 
 > Proyecto de hardware: botón Bluetooth de muñeca para marcar puntos desde adentro
 > de la cancha, con más alcance que el reloj. Documentado 2026-06-11.
-> **Estado: componentes aún no comprados.** Al llegar, pedir el firmware completo
-> (queda en `firmware/` de este repo).
+> **Estado: firmware listo en [`firmware/`](firmware/README.md) (2026-06-12);
+> componentes aún no comprados.**
 
 ## Concepto
 
@@ -61,6 +61,12 @@ Motor vibración:
 ⚠️ **No conectar el USB-C de la placa con la batería puesta** (el 5V del USB
 backfeed-ea a la batería sin control de carga). Cargar siempre por el USB del
 TP4056; desconectar la batería para flashear.
+
+## Firmware
+
+**Ya escrito y versionado en [`firmware/padel-boton/padel-boton.ino`](firmware/padel-boton/padel-boton.ino)**,
+con instrucciones de entorno, flasheo y emparejamiento en [`firmware/README.md`](firmware/README.md).
+Usa NimBLE-Arduino 2.x como HID Consumer Control. Lo que sigue era el diseño original.
 
 ## Firmware (diseño)
 
