@@ -708,8 +708,11 @@ async function watchStart() {
   }
   const ms = navigator.mediaSession;
   const keep = () => { watchAudio.play().catch(() => {}); ms.playbackState = 'playing'; };
-  ms.setActionHandler('play', () => { keep(); undo(); setTimeout(pushWatchMetadata, 600); });
-  ms.setActionHandler('pause', () => { keep(); undo(); setTimeout(pushWatchMetadata, 600); });
+  // ráfaga de re-empujes: el sistema pisa la actualización del título al procesar
+  // la pausa; el primer push que caiga después de que asiente es el que ve el reloj
+  const repush = () => [150, 400, 900].forEach(d => setTimeout(pushWatchMetadata, d));
+  ms.setActionHandler('play', () => { keep(); undo(); repush(); });
+  ms.setActionHandler('pause', () => { keep(); undo(); repush(); });
   ms.setActionHandler('previoustrack', () => { keep(); addPoint('A'); });
   ms.setActionHandler('nexttrack', () => { keep(); addPoint('B'); });
   ms.playbackState = 'playing';

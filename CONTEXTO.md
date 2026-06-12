@@ -4,10 +4,10 @@
 
 ## Estado actual / pendientes de verificación
 
-- **Fix del refresco en el reloj al borrar con ⏯** (re-push de metadatos a los 600 ms
-  + en evento `playing`): desplegado en v4, **pendiente de prueba real** por el usuario.
-  Plan B si no alcanza: simular un cambio de pista al deshacer (el reloj siempre
-  escucha los cambios de pista).
+- **Fix del refresco en el reloj al borrar con ⏯: VERIFICADO por el usuario** (v4).
+  Reportó algo de delay → en v5 se cambió el re-push único de 600 ms por una ráfaga
+  a los 150/400/900 ms. El delay residual es del propio refresco AVRCP del reloj
+  (~no eliminable del lado de la app).
 - **Limitante conocida: alcance Bluetooth** reloj↔teléfono (clase 2, ~10 m reales,
   menos con paredes de blindex). Mitigación: dejar el teléfono al costado de la
   cancha a mitad de cancha.
@@ -36,7 +36,7 @@ Sin frameworks ni dependencias: HTML/CSS/JS vanilla en un solo archivo.
 |---|---|
 | `index.html` | Toda la app: UI, motor de puntuación, PWA, control por reloj |
 | `manifest.webmanifest` | Manifest PWA (standalone, es, íconos 192/512) |
-| `sw.js` | Service worker, precache + stale-while-revalidate. **Versión actual: `padel-score-v4`** |
+| `sw.js` | Service worker, precache + stale-while-revalidate. **Versión actual: `padel-score-v5`** |
 | `icon-192.png`, `icon-512.png` | Íconos (pelota teal sobre fondo oscuro) |
 | `make-icons.cjs` | Regenera los PNG sin dependencias (PNG crudo + zlib) |
 | `test-engine.cjs` | 23 pruebas del motor de puntuación: `node test-engine.cjs` |
