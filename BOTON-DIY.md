@@ -89,6 +89,27 @@ si toques > 0 && millis()-tVentana > 400:
 - TX power: subir con `esp_ble_tx_power_set(...)` al máximo del chip.
   Alcance esperado: 30-60 m con línea de vista (cancha 20×10 cubierta de sobra).
 
+## Opción comprada en ML Argentina: control multimedia "para volante"
+
+Investigado 2026-06: los **controles remotos BT multimedia para volante/moto/bici**
+(https://listado.mercadolibre.com.ar/control-remoto-para-volante-bluetooth) son
+botoneras BLE a pila de botón, plug-and-play, con botones físicos ⏮ ⏯ ⏭ — mandan
+los mismos comandos de medios que la app ya escucha, sin tocar código.
+Ejemplo: https://articulo.mercadolibre.com.ar/MLA-1108605122
+
+- ✅ Baratos, disponibles, botones dedicados, adaptables a la muñeca con velcro.
+- ⚠️ Verificar que sea control multimedia (botones de música en la foto), NO
+  disparador de selfie (manda volumen) NI receptor de audio BT con salida aux
+  (se roba la salida de audio y mata la voz del marcador).
+- ❌ **Alcance ~10 m, igual que el reloj** — no resuelve el problema de alcance.
+  Mitigación: teléfono pegado al vidrio a mitad de cancha → distancia máx ~11 m.
+  Para alcance real (30-60 m) las únicas vías son el DIY de este documento o un
+  Flic 2 importado (hay listado en ML pero stock incierto:
+  https://listado.mercadolibre.com.ar/flic-smart-button).
+
+Plan sugerido: comprar uno de estos controles (cuesta poco) y probarlo en cancha
+con el teléfono bien ubicado; si el alcance no da, encarar el DIY.
+
 ## Por qué NO sirven los botones BLE baratos
 
 Los disparadores de cámara/selfie (AB Shutter 3 y similares, ~US$ 3) mandan teclas
