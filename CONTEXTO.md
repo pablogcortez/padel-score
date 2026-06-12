@@ -2,6 +2,25 @@
 
 > Documento de recapitulación para retomar el desarrollo. Última actualización: 2026-06-11.
 
+## Estado actual / pendientes de verificación
+
+- **Fix del refresco en el reloj al borrar con ⏯** (re-push de metadatos a los 600 ms
+  + en evento `playing`): desplegado en v4, **pendiente de prueba real** por el usuario.
+  Plan B si no alcanza: simular un cambio de pista al deshacer (el reloj siempre
+  escucha los cambios de pista).
+- **Limitante conocida: alcance Bluetooth** reloj↔teléfono (clase 2, ~10 m reales,
+  menos con paredes de blindex). Mitigación: dejar el teléfono al costado de la
+  cancha a mitad de cancha.
+- **Alternativa investigada (2026-06): Flic 2 + Flic Wristband** (flic.io).
+  Botón BLE con gestos nativos de 1 toque / 2 toques / mantener (detectados por
+  la app Flic en el teléfono, no por timing nuestro), alcance ~50 m con línea de
+  vista (vs ~10 m del reloj), pulsera oficial como accesorio. Su app de Android
+  mapea cada gesto a controles de música (anterior/siguiente/play-pausa), así que
+  **funciona con nuestra app sin tocar código**: 1 toque→⏮ (punto nosotros),
+  2 toques→⏭ (punto ellos), mantener→⏯ (borrar). Ojo: los disparadores de cámara
+  BLE baratos (AB Shutter y similares) NO sirven — mandan teclas de volumen/enter,
+  no comandos de música.
+
 ## Qué es
 
 PWA instalable para llevar el marcador de un partido de pádel (inspirada en Scorebot),
