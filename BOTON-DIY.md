@@ -33,7 +33,8 @@ Opción recomendada (barata y disponible):
    https://listado.mercadolibre.com.ar/bateria-li-po-3.7v-400mah
 4. **Pulsador táctil 12 mm** (mejor si es IP67 por el sudor).
 5. **Motor de vibración de celular 3 V** + transistor NPN (2N2222/BC548) +
-   resistencia 1k + diodo 1N4148 (flyback).
+   resistencia 1k + diodo flyback: **1N4148, 1N4007 (1N400x) o 1N5819 — cualquiera
+   sirve**; banda (cátodo) hacia el positivo del motor.
 6. Carcasa impresa en 3D + correa de velcro (botón hundido ~1 mm para evitar
    toques accidentales).
 
