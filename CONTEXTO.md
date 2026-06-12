@@ -11,15 +11,13 @@
 - **Limitante conocida: alcance Bluetooth** reloj↔teléfono (clase 2, ~10 m reales,
   menos con paredes de blindex). Mitigación: dejar el teléfono al costado de la
   cancha a mitad de cancha.
-- **Alternativa investigada (2026-06): Flic 2 + Flic Wristband** (flic.io).
-  Botón BLE con gestos nativos de 1 toque / 2 toques / mantener (detectados por
-  la app Flic en el teléfono, no por timing nuestro), alcance ~50 m con línea de
-  vista (vs ~10 m del reloj), pulsera oficial como accesorio. Su app de Android
-  mapea cada gesto a controles de música (anterior/siguiente/play-pausa), así que
-  **funciona con nuestra app sin tocar código**: 1 toque→⏮ (punto nosotros),
-  2 toques→⏭ (punto ellos), mantener→⏯ (borrar). Ojo: los disparadores de cámara
-  BLE baratos (AB Shutter y similares) NO sirven — mandan teclas de volumen/enter,
-  no comandos de música.
+- **Alternativas para más alcance: ver `BOTON-DIY.md`** — documenta el botón BLE
+  de muñeca casero (ESP32-C3 / XIAO nRF52840, BOM verificada en Mercado Libre AR,
+  conexionado, diseño del firmware con gestos 1/2/mantener) y la opción comprada
+  (Flic 2 + Wristband, ~50 m, gestos nativos mapeables a medios). Ambos usan el
+  mismo canal de Media Session, funcionan sin tocar el código de la app y pueden
+  convivir con el reloj. **El usuario tiene experiencia en electrónica y aún no
+  compró componentes**; cuando lleguen, escribir el firmware completo en `firmware/`.
 
 ## Qué es
 
@@ -43,6 +41,7 @@ Sin frameworks ni dependencias: HTML/CSS/JS vanilla en un solo archivo.
 | `make-icons.cjs` | Regenera los PNG sin dependencias (PNG crudo + zlib) |
 | `test-engine.cjs` | 23 pruebas del motor de puntuación: `node test-engine.cjs` |
 | `server.cjs` | Servidor local de prueba: `node server.cjs` → http://localhost:8765 |
+| `BOTON-DIY.md` | Proyecto de botón BLE de muñeca (hardware + firmware) para más alcance que el reloj |
 
 ## Arquitectura del motor de puntuación (decisión clave)
 
