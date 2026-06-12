@@ -25,14 +25,10 @@ Opción recomendada (barata y disponible):
 
 1. **ESP32-C3 Super Mini** — USB-C, BLE 5, 22×18 mm.
    https://listado.mercadolibre.com.ar/esp32-super-mini-c3
-2. **TP4056 con protección** (versión "c/protección", conviene pack x5).
-   https://listado.mercadolibre.com.ar/modulo-tp4056
-   Variante elegida por el usuario (2026-06): **TP4056 + Step-Up Boost 5V**
-   (https://www.mercadolibre.com.ar/modulo-carga-micro-usb-tp4056-step-up-boost-18650/p/MLA58348555)
-   — salida 5 V estable al pin 5V de la placa (mejor que batería directa), pero el
-   boost consume unos mA siempre: **agregar llave deslizante** entre módulo y placa
-   para cortar todo al guardarlo (el deep sleep no alcanza con boost en el medio).
-   Sirve con LiPo 3,7 V común, no hace falta una 18650.
+2. **TP4056 con protección** — **COMPRADO (2026-06): versión USB-C c/protector**.
+   Conexionado tal como está documentado abajo: OUT+ → pin 5V, OUT− → GND.
+   (Se evaluó la variante con boost 5V pero se descartó: el boost consume mA
+   permanentes y arruinaría el deep sleep.)
 3. **LiPo 3,7 V 300–500 mAh.**
    https://listado.mercadolibre.com.ar/bateria-li-po-3.7v-400mah
 4. **Pulsador táctil 12 mm** (mejor si es IP67 por el sudor).
