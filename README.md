@@ -7,6 +7,7 @@ Marcador de pádel — PWA instalable que funciona offline.
 - Puntos 0/15/30/40, punto de oro o ventaja, sets, tie-break,
   súper tie-break a 11 (dif. de 2) como tercer set opcional.
 - Deshacer ilimitado y guardado automático del partido.
+- Voz opcional que canta el tanteo tras cada punto (TTS local, offline).
 - Control desde el reloj (Huawei Watch u otros) vía controles de música Bluetooth:
   ⏮ anterior = punto nosotros · ⏭ siguiente = punto ellos · ⏯ play/pausa = deshacer.
   El marcador en vivo se ve como título de la "canción" en el reloj.

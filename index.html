@@ -253,8 +253,9 @@
   </div>
 
   <div class="bottombar">
-    <button id="btnUndo">↩ Deshacer punto</button>
+    <button id="btnUndo">↩ Deshacer</button>
     <button id="btnWatch">⌚ Reloj</button>
+    <button id="btnVoice">🔊 Voz</button>
   </div>
 </div>
 
@@ -493,12 +494,13 @@ function showMatch() {
 }
 
 function addPoint(team) {
-  const s = computeScore(match.cfg, match.points);
-  if (s.winner) return;
+  const before = computeScore(match.cfg, match.points);
+  if (before.winner) return;
   match.points.push(team);
   save();
   if (navigator.vibrate) navigator.vibrate(15);
   render();
+  announceChange(before, computeScore(match.cfg, match.points), match.cfg);
 }
 
 function undo() {
@@ -506,6 +508,8 @@ function undo() {
   match.points.pop();
   save();
   render();
+  const s = computeScore(match.cfg, match.points);
+  speak(`Corregido. ${pointPhrase(s, match.cfg)}`);
 }
 
 $('padA').addEventListener('click', () => addPoint('A'));
@@ -532,6 +536,7 @@ function showSetup() {
   showScreen('setup');
   watchStop();
   releaseWakeLock();
+  try { speechSynthesis.cancel(); } catch (e) {}
   const saved = load();
   const hasOngoing = saved && saved.points && !computeScore(saved.cfg, saved.points).winner && saved.points.length > 0;
   $('btnResume').style.display = hasOngoing ? 'block' : 'none';
@@ -753,6 +758,67 @@ $('btnWatchGo').addEventListener('click', () => {
   watchStart();
 });
 $('btnWatchCancel').addEventListener('click', () => $('watchModal').classList.remove('show'));
+
+// ---------- Voz: canta el marcador (Web Speech API, TTS local de Android) ----------
+let voiceOn = false;
+try { voiceOn = localStorage.getItem('padel-voice') === '1'; } catch (e) {}
+
+function speak(text) {
+  if (!voiceOn || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel(); // siempre cantar lo último, sin encolar
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'es-ES';
+    u.rate = 1.05;
+    const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.startsWith('es'));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+function pointPhrase(s, cfg) {
+  if (s.winner) return `partido para ${s.winner === 'a' ? cfg.nameA : cfg.nameB}`;
+  if (s.inTiebreak) return `${s.pts.a} a ${s.pts.b}`;
+  if (s.isGoldenPoint) return 'cuarenta iguales, punto de oro';
+  if (s.pts.a === 4) return `ventaja ${cfg.nameA}`;
+  if (s.pts.b === 4) return `ventaja ${cfg.nameB}`;
+  if (s.pts.a === 3 && s.pts.b === 3) return 'iguales';
+  return `${PTS[s.pts.a]} a ${PTS[s.pts.b]}`;
+}
+
+function announceChange(before, after, cfg) {
+  if (after.winner) {
+    speak(`Juego, set y partido, ${after.winner === 'a' ? cfg.nameA : cfg.nameB}`);
+    return;
+  }
+  if (after.sets.length > before.sets.length) {
+    const set = after.sets[after.sets.length - 1];
+    const w = set.a > set.b ? 'a' : 'b';
+    speak(`Set para ${w === 'a' ? cfg.nameA : cfg.nameB}. Sets ${after.setsWon.a} a ${after.setsWon.b}` +
+      (after.inSuperTb ? '. Súper tie-break' : ''));
+    return;
+  }
+  if (after.games.a + after.games.b > before.games.a + before.games.b) {
+    const w = after.games.a > before.games.a ? 'a' : 'b';
+    speak(`Juego ${w === 'a' ? cfg.nameA : cfg.nameB}. ${after.games.a} a ${after.games.b}` +
+      (after.inTiebreak && !before.inTiebreak ? '. Tie-break' : ''));
+    return;
+  }
+  speak(pointPhrase(after, cfg));
+}
+
+function updateVoiceBtn() {
+  $('btnVoice').classList.toggle('on', voiceOn);
+}
+updateVoiceBtn();
+
+$('btnVoice').addEventListener('click', () => {
+  voiceOn = !voiceOn;
+  try { localStorage.setItem('padel-voice', voiceOn ? '1' : '0'); } catch (e) {}
+  updateVoiceBtn();
+  if (voiceOn) speak('Voz activada');
+  else try { speechSynthesis.cancel(); } catch (e) {}
+});
 
 // ---------- Arranque ----------
 (function init() {

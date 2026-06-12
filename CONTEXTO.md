@@ -36,7 +36,7 @@ Sin frameworks ni dependencias: HTML/CSS/JS vanilla en un solo archivo.
 |---|---|
 | `index.html` | Toda la app: UI, motor de puntuación, PWA, control por reloj |
 | `manifest.webmanifest` | Manifest PWA (standalone, es, íconos 192/512) |
-| `sw.js` | Service worker, precache + stale-while-revalidate. **Versión actual: `padel-score-v5`** |
+| `sw.js` | Service worker, precache + stale-while-revalidate. **Versión actual: `padel-score-v6`** |
 | `icon-192.png`, `icon-512.png` | Íconos (pelota teal sobre fondo oscuro) |
 | `make-icons.cjs` | Regenera los PNG sin dependencias (PNG crudo + zlib) |
 | `test-engine.cjs` | 23 pruebas del motor de puntuación: `node test-engine.cjs` |
@@ -102,6 +102,15 @@ El título de la "canción" (MediaMetadata) muestra el marcador en vivo en el re
 
 Extras: wake lock (pantalla encendida durante el partido), vibración al sumar punto,
 prompt de instalación con `beforeinstallprompt` (botón "📲 Instalar en el teléfono").
+
+**Voz (v6)**: botón "🔊 Voz" en la barra inferior — canta el marcador con Web Speech
+API (TTS local de Android, offline, `lang es-ES`). Tras cada punto dice el tanteo
+("treinta a quince", "iguales", "ventaja X", "cuarenta iguales, punto de oro"),
+"Juego X. 4 a 3", "Set para X. Sets 1 a 1", "Juego, set y partido, X"; al deshacer,
+"Corregido" + tanteo. Preferencia en localStorage (`padel-voice`). `speak()` hace
+`cancel()` antes de hablar para no encolar. Funciona también con puntos desde el
+reloj (la activación del botón cuenta como gesto para el autoplay policy); requiere
+volumen multimedia alto — no molesta porque la pista del reloj es silenciosa.
 
 ## Deploy y actualizaciones
 
