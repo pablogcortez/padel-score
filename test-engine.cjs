@@ -111,5 +111,23 @@ check('saca A al inicio', s.server === 'a');
 s = computeScore(cfgGold, rep('A', 4));
 check('tras 1 juego saca B', s.server === 'b');
 
+// 13. Súper tie-break a 11 como tercer set (1-1 en sets)
+const cfgStb = { setsToWin: 2, goldenPoint: true, tiebreak: true, superTb: true };
+pts = [];
+for (let g = 0; g < 6; g++) pts.push(...rep('A', 4)); // set 1: A 6-0
+for (let g = 0; g < 6; g++) pts.push(...rep('B', 4)); // set 2: B 6-0
+s = computeScore(cfgStb, pts);
+check('1-1 en sets entra en súper TB', s.inTiebreak === true && s.inSuperTb === true);
+s = computeScore(cfgStb, pts.concat(rep('A', 11)));
+check('STB 11-0 gana el partido', s.winner === 'a' && s.sets.length === 3 && s.sets[2].a === 11 && s.sets[2].stb === true);
+s = computeScore(cfgStb, pts.concat(rep('A', 10), rep('B', 10), 'A'));
+check('STB 11-10 no cierra (dif. de 2)', !s.winner && s.pts.a === 11 && s.inSuperTb);
+s = computeScore(cfgStb, pts.concat(rep('A', 10), rep('B', 10), 'A', 'A'));
+check('STB 12-10 cierra el partido', s.winner === 'a' && s.sets[2].a === 12 && s.sets[2].b === 10);
+s = computeScore(cfgGold, pts);
+check('sin STB el tercer set es normal', s.inTiebreak === false && s.inSuperTb === false);
+s = computeScore(cfgStb, pts.concat(rep('B', 8)));
+check('deshacer dentro del STB reproduce bien', s.inSuperTb && s.pts.b === 8 && s.pts.a === 0);
+
 console.log(fails ? `\n${fails} pruebas fallaron` : '\nTodas las pruebas pasaron ✔');
 process.exit(fails ? 1 : 0);

@@ -205,6 +205,14 @@
     </div>
   </div>
 
+  <div class="field" id="fieldStb">
+    <label>Tercer set (con 1-1 en sets)</label>
+    <div class="seg" id="segStb">
+      <button data-v="stb" class="sel">Súper tie-break a 11</button>
+      <button data-v="set">Set normal</button>
+    </div>
+  </div>
+
   <button class="start-btn" id="btnStart">COMENZAR PARTIDO</button>
   <button class="resume-btn" id="btnResume" style="display:none">▶ Continuar partido guardado</button>
   <button class="resume-btn" id="btnInstall" style="display:none">📲 Instalar en el teléfono</button>
@@ -296,6 +304,7 @@ const defaultConfig = () => ({
   setsToWin: 2,      // 2 = al mejor de 3; 1 = un set
   goldenPoint: true,
   tiebreak: true,
+  superTb: true,     // tercer set (1-1) como súper tie-break a 11
 });
 
 // ---------- Motor de puntuación ----------
@@ -307,6 +316,7 @@ function computeScore(cfg, points) {
     games: { a: 0, b: 0 },    // juegos del set actual
     pts: { a: 0, b: 0 },      // puntos del juego actual (índice o nº en tie-break)
     inTiebreak: false,
+    inSuperTb: false,         // tercer set jugado como súper tie-break a 11
     setsWon: { a: 0, b: 0 },
     winner: null,             // 'a' | 'b' | null
     isGoldenPoint: false,
@@ -323,7 +333,8 @@ function computeScore(cfg, points) {
     if (s.inTiebreak) {
       s.pts[w]++;
       s.tbPointsPlayed++;
-      if (s.pts[w] >= 7 && s.pts[w] - s.pts[l] >= 2) {
+      const target = s.inSuperTb ? 11 : 7;
+      if (s.pts[w] >= target && s.pts[w] - s.pts[l] >= 2) {
         winGame(s, w, cfg, true);
       }
       continue;
@@ -364,6 +375,18 @@ function computeScore(cfg, points) {
 
 function winGame(s, w, cfg, wasTiebreak) {
   const l = w === 'a' ? 'b' : 'a';
+
+  if (s.inSuperTb) {
+    // súper tie-break decisivo: se registra como set con los puntos (ej. 11-9)
+    s.sets.push({ a: s.pts.a, b: s.pts.b, stb: true });
+    s.setsWon[w]++;
+    s.pts = { a: 0, b: 0 };
+    s.inTiebreak = false;
+    s.inSuperTb = false;
+    s.winner = w;
+    return;
+  }
+
   s.games[w]++;
   s.gamesPlayedTotal++;
   s.pts = { a: 0, b: 0 };
@@ -385,7 +408,13 @@ function winGame(s, w, cfg, wasTiebreak) {
     s.sets.push({ a: s.games.a, b: s.games.b });
     s.setsWon[w]++;
     s.games = { a: 0, b: 0 };
-    if (s.setsWon[w] >= cfg.setsToWin) s.winner = w;
+    if (s.setsWon[w] >= cfg.setsToWin) {
+      s.winner = w;
+    } else if (cfg.superTb && cfg.setsToWin === 2 && s.setsWon.a === 1 && s.setsWon.b === 1) {
+      // 1-1 en sets: el tercero se juega como súper tie-break a 11
+      s.inTiebreak = true;
+      s.inSuperTb = true;
+    }
   }
 }
 
@@ -422,7 +451,12 @@ function segInit(segId) {
     b.classList.add('sel');
   });
 }
-['segSets', 'segGold', 'segTb'].forEach(segInit);
+['segSets', 'segGold', 'segTb', 'segStb'].forEach(segInit);
+
+// el súper tie-break solo aplica al mejor de 3
+$('segSets').addEventListener('click', () => {
+  $('fieldStb').style.display = segValue('segSets') === '3' ? 'block' : 'none';
+});
 
 function segValue(segId) {
   return $(segId).querySelector('button.sel').dataset.v;
@@ -435,6 +469,7 @@ $('btnStart').addEventListener('click', () => {
   cfg.setsToWin = segValue('segSets') === '1' ? 1 : 2;
   cfg.goldenPoint = segValue('segGold') === 'gold';
   cfg.tiebreak = segValue('segTb') === 'yes';
+  cfg.superTb = segValue('segStb') === 'stb';
   match = { cfg, points: [] };
   save();
   showMatch();
@@ -534,7 +569,7 @@ function render() {
         const other = t === 'a' ? 'b' : 'a';
         if (set[t] > set[other]) cell.classList.add('won');
       } else if (i === s.sets.length && !finished) {
-        cell.textContent = s.games[t];
+        cell.textContent = s.inSuperTb ? s.pts[t] : s.games[t];
         cell.classList.add('won');
       } else {
         cell.textContent = '·';
@@ -554,31 +589,21 @@ function render() {
   $('padB').querySelector('.pad-points').textContent = finished ? '–' : pointLabel(s, 'b');
 
   // banners
+  $('tbBanner').textContent = s.inSuperTb ? '— Súper tie-break a 11 —' : '— Tie-break —';
   $('tbBanner').style.display = s.inTiebreak ? 'block' : 'none';
   $('gpBanner').style.display = s.isGoldenPoint ? 'block' : 'none';
 
   // modo
   $('modeTag').textContent =
-    (cfg.setsToWin === 1 ? '1 set' : 'Mejor de 3') + ' · ' +
+    (cfg.setsToWin === 1 ? '1 set' : 'Mejor de 3') +
+    (cfg.superTb && cfg.setsToWin === 2 ? ' · STB 11' : '') + ' · ' +
     (cfg.goldenPoint ? 'Pto. de oro' : 'Ventaja');
 
   $('btnUndo').disabled = match.points.length === 0;
   $('btnUndoTop').disabled = match.points.length === 0;
 
   // marcador en vivo en el reloj (título de la "canción")
-  if (watchActive && 'mediaSession' in navigator) {
-    const title = finished
-      ? `🏆 Ganó ${s.winner === 'a' ? cfg.nameA : cfg.nameB}`
-      : `${cfg.nameA} ${pointLabel(s, 'a')} - ${pointLabel(s, 'b')} ${cfg.nameB}`;
-    try {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title,
-        artist: `Juegos ${s.games.a}-${s.games.b} · Sets ${s.setsWon.a}-${s.setsWon.b}`,
-        album: 'Padel Score',
-        artwork: [{ src: 'icon-512.png', sizes: '512x512', type: 'image/png' }],
-      });
-    } catch (e) {}
-  }
+  pushWatchMetadata();
 
   // fin del partido
   if (finished) {
@@ -647,6 +672,23 @@ function makeSilentWav(sec = 60) {
   return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
 }
 
+function pushWatchMetadata() {
+  if (!watchActive || !('mediaSession' in navigator) || !match) return;
+  const cfg = match.cfg;
+  const s = computeScore(cfg, match.points);
+  const title = s.winner
+    ? `🏆 Ganó ${s.winner === 'a' ? cfg.nameA : cfg.nameB}`
+    : `${cfg.nameA} ${pointLabel(s, 'a')} - ${pointLabel(s, 'b')} ${cfg.nameB}`;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title,
+      artist: `Juegos ${s.games.a}-${s.games.b} · Sets ${s.setsWon.a}-${s.setsWon.b}`,
+      album: 'Padel Score',
+      artwork: [{ src: 'icon-512.png', sizes: '512x512', type: 'image/png' }],
+    });
+  } catch (e) {}
+}
+
 async function watchStart() {
   if (!('mediaSession' in navigator)) {
     alert('Este navegador no soporta control de medios (Media Session). Probá con Chrome en el teléfono.');
@@ -657,6 +699,8 @@ async function watchStart() {
     watchAudio.loop = true;
     // si el sistema pausa el audio, lo retomamos para no perder la sesión
     watchAudio.addEventListener('pause', () => { if (watchActive) watchAudio.play().catch(() => {}); });
+    // al reanudar, re-empujar el marcador: la pausa pisa la actualización del título
+    watchAudio.addEventListener('playing', () => { if (watchActive) pushWatchMetadata(); });
   }
   try { await watchAudio.play(); } catch (e) {
     alert('No se pudo iniciar el audio de control. Tocá la pantalla e intentá de nuevo.');
@@ -664,8 +708,8 @@ async function watchStart() {
   }
   const ms = navigator.mediaSession;
   const keep = () => { watchAudio.play().catch(() => {}); ms.playbackState = 'playing'; };
-  ms.setActionHandler('play', () => { keep(); undo(); });
-  ms.setActionHandler('pause', () => { keep(); undo(); });
+  ms.setActionHandler('play', () => { keep(); undo(); setTimeout(pushWatchMetadata, 600); });
+  ms.setActionHandler('pause', () => { keep(); undo(); setTimeout(pushWatchMetadata, 600); });
   ms.setActionHandler('previoustrack', () => { keep(); addPoint('A'); });
   ms.setActionHandler('nexttrack', () => { keep(); addPoint('B'); });
   ms.playbackState = 'playing';

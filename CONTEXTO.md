@@ -19,7 +19,7 @@ Sin frameworks ni dependencias: HTML/CSS/JS vanilla en un solo archivo.
 |---|---|
 | `index.html` | Toda la app: UI, motor de puntuación, PWA, control por reloj |
 | `manifest.webmanifest` | Manifest PWA (standalone, es, íconos 192/512) |
-| `sw.js` | Service worker, precache + stale-while-revalidate. **Versión actual: `padel-score-v3`** |
+| `sw.js` | Service worker, precache + stale-while-revalidate. **Versión actual: `padel-score-v4`** |
 | `icon-192.png`, `icon-512.png` | Íconos (pelota teal sobre fondo oscuro) |
 | `make-icons.cjs` | Regenera los PNG sin dependencias (PNG crudo + zlib) |
 | `test-engine.cjs` | 23 pruebas del motor de puntuación: `node test-engine.cjs` |
@@ -37,7 +37,9 @@ devuelve el estado completo (sets, juegos, puntos, tie-break, saque, ganador).
 - Reglas implementadas: 0/15/30/40, punto de oro **o** ventaja (configurable),
   set a 6 con diferencia de 2, tie-break a 6-6 (configurable; a 7 con dif. de 2),
   partido a 1 set o al mejor de 3. Saque alterna por juego; en tie-break 1 saque
-  y luego de a 2.
+  y luego de a 2. **Súper tie-break a 11** (dif. de 2, `cfg.superTb`, default on)
+  como tercer set cuando van 1-1: se registra en `sets` como `{a, b, stb: true}`
+  con los puntos (ej. 11-9); en `winGame` tiene rama propia al inicio.
 
 ⚠️ **No mover los marcadores del código**: `test-engine.cjs` extrae el motor de
 `index.html` cortando desde `const PTS` hasta `// ---------- Persistencia` y
@@ -73,6 +75,12 @@ El título de la "canción" (MediaMetadata) muestra el marcador en vivo en el re
    la app/Chrome; si aparece y el reloj no la ve, es Huawei Health (activar control
    de música del dispositivo).
 6. Riesgo conocido: Spotify u otra app de música abierta puede robarse los controles.
+7. **Al deshacer con ⏯ el reloj no refrescaba el título**: la pausa/reanudación del
+   sistema pisa la actualización de metadatos. Fix: `pushWatchMetadata()` se re-empuja
+   con `setTimeout(..., 600)` tras el undo y en el evento `playing` del audio.
+8. **La app Música del reloj vuelve sola a la esfera** — no controlable desde el
+   teléfono. Mitigación del lado del reloj: subir el tiempo de pantalla/"volver a
+   la esfera" en Ajustes del reloj y asignar el botón inferior como atajo a Música.
 
 Extras: wake lock (pantalla encendida durante el partido), vibración al sumar punto,
 prompt de instalación con `beforeinstallprompt` (botón "📲 Instalar en el teléfono").
@@ -101,7 +109,6 @@ prompt de instalación con `beforeinstallprompt` (botón "📲 Instalar en el te
 
 - Historial de partidos terminados (lista en localStorage) y estadísticas
   (puntos ganados por pareja, rachas, duración).
-- Súper tie-break a 10 como tercer set (formato común en pádel amateur).
 - Marcar quién saca dentro de la pareja (4 jugadores) y lados de cancha.
 - Sonido/beep de confirmación al sumar punto desde el reloj (hoy solo vibra el teléfono).
 - Compartir resultado final (Web Share API) como imagen o texto.
