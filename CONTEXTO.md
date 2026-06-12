@@ -44,6 +44,9 @@ Sin frameworks ni dependencias: HTML/CSS/JS vanilla en un solo archivo.
 | `test-engine.cjs` | 23 pruebas del motor de puntuación: `node test-engine.cjs` |
 | `server.cjs` | Servidor local de prueba: `node server.cjs` → http://localhost:8765 |
 | `BOTON-DIY.md` | Proyecto de botón BLE de muñeca (hardware + firmware) para más alcance que el reloj |
+| `firmware/padel-boton/` | Firmware del botón BLE (ESP32-C3, sin probar en hardware) |
+| `firmware/contador-uno/` | Tablero de mesa independiente con Arduino Uno + OLED del kit de inicio (motor porteado a C, verificado por fuzzing) |
+| `test-uno.cjs` | Fuzzing: compara el porteo C del Uno contra el motor JS (133k+ estados, 16 configs) |
 
 ## Arquitectura del motor de puntuación (decisión clave)
 
